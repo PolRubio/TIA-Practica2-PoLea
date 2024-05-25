@@ -157,49 +157,6 @@ restaurants: List[Restaurant] = [
     Restaurant("Omnia Cafe-Bar", "Palmerola 4",                                    especialitats["CATALANA"],   Coordenada(41.53860711852714,  2.4414085192527155)),
 ]
 
-# Ordenar las recogidas por tiempo de entrega y distancia desde el Tecnocampus
-def ordenar_recogidas(pedidos, restaurantes, initial_location):
-    recogidas = []
-    for especialidad, grupo in pd.DataFrame(pedidos).groupby("Especialidad"):
-        restaurante = restaurantes[especialidad]
-        grupo = grupo.sort_values(by="Especialidad")
-        for _, pedido in grupo.iterrows():
-            distancia = geodesic(initial_location, restaurante["Coordenadas"]).kilometers
-            recogidas.append((pedido["Id"], especialidad, restaurante["Nombre"], restaurante["Coordenadas"], distancia))
-    recogidas.sort(key=lambda x: x[4])
-    return recogidas
-
-# Ordenar las entregas por especialidad y distancia desde la ubicación actual del repartidor
-def ordenar_entregas(pedidos, initial_location):
-    entregas = []
-    for especialidad, grupo in pd.DataFrame(pedidos).groupby("Especialidad"):
-        grupo["Distancia"] = grupo["Coordenadas"].apply(lambda x: geodesic(initial_location, x).kilometers)
-        grupo = grupo.sort_values(by="Distancia")
-        for _, pedido in grupo.iterrows():
-            entregas.append((pedido["Id"], especialidad, pedido["Calle"], pedido["Coordenadas"], pedido["Distancia"]))
-    entregas.sort(key=lambda x: x[4])
-    return entregas
-
-# Imprimir las paradas y estados
-def imprimir_paradas_estados(recogidas, entregas):
-    print("Recogidas:")
-    for recogida in recogidas:
-        print(f"Recoger pedido {recogida[0]} de especialidad {recogida[1]} en {recogida[2]} ({recogida[3]})")
-
-    print("\nEntregas:")
-    for entrega in entregas:
-        print(f"Entregar pedido {entrega[0]} de especialidad {entrega[1]} en {entrega[2]} ({entrega[3]})")
-
-# Ordenar las recogidas y entregas
-recogidas = ordenar_recogidas(pedidos, restaurantes, initial_location)
-entregas = ordenar_entregas(pedidos, initial_location)
-
-# Imprimir los resultados
-imprimir_paradas_estados(recogidas, entregas)
-
-# print the detailed and complete info of the first comanda
 # Variables finals
 CAPACITAT_MAXIMA = 12000
 
-print(f"Comanda {comandes[0].id}: {comandes[0].especialitat.especialitat} - {comandes[0].carrer} - {comandes[0].coordenades.latitud} - {comandes[0].coordenades.longitud}")
-print(f"Restaurant: {restaurants[0].nom} - {restaurants[0].especialitat.especialitat} - {restaurants[0].coordenades.latitud} - {restaurants[0].coordenades.longitud}")
