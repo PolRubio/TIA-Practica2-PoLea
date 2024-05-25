@@ -1,1 +1,2 @@
 .vscode/*
+/src/domain/__pycache__
