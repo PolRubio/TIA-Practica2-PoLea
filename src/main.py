@@ -6,50 +6,50 @@ from domain.restaurant import Restaurant
 from domain.especialitat import Especialitat
 from domain.mapGenerator import MapGenerator
 
-def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitat_maxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Restaurant], int, Coordenada, List[Comanda], List[Restaurant]]:
+def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Restaurant], int, Coordenada, List[Comanda], List[Restaurant]]:
     """
     Retorna la llista de restaurants que s'han de visitar per plenar la motxilla amb les comandes amb més compromís.
     """
-    ubicacio_actual: Coordenada = inici
+    ubicacioActual: Coordenada = inici
     motxilla: List[Restaurant] = []
-    capacitat_actual: int = 0
+    capacitatActual: int = 0
 
     # Ordenem les comandes per temps de compromís
     comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis)
 
     # Mentre la capacitat de la motxilla no sigui suficient o no quedin comandes
-    while len(comandes) > 0 and capacitat_actual+comandes[0].especialitat.pes <= capacitat_maxima:
+    while len(comandes) > 0 and capacitatActual+comandes[0].especialitat.pes <= capacitatMaxima:
         # Busquem el restaurant més proper amb la especialitat de la comanda amb més compromís
         comanda: Comanda = comandes.pop(0)
         restaurant: Optional[Restaurant] = None
-        distancia_minima: float = float("inf")
+        distanciaMinima: float = float("inf")
 
         for r in restaurants:
             if r.especialitat == comanda.especialitat:
-                distancia: float = ubicacio_actual.distancia(r.coordenades)
-                if distancia < distancia_minima:
-                    distancia_minima = distancia
+                distancia: float = ubicacioActual.distancia(r.coordenades)
+                if distancia < distanciaMinima:
+                    distanciaMinima = distancia
                     restaurant = r
             
 
         if restaurant is not None:
-            print(f"\tAnem al restaurant {restaurant.nom} ({restaurant.especialitat.especialitat}) que està a {round(distancia_minima, 2)}m a les coordenades ({restaurant.coordenades.latitud}, {restaurant.coordenades.longitud}) a per la comanda {comanda.id} ({comanda.especialitat.especialitat}).")
+            print(f"\tAnem al restaurant {restaurant.nom} ({restaurant.especialitat.especialitat}) que està a {round(distanciaMinima, 2)}m a les coordenades ({restaurant.coordenades.latitud}, {restaurant.coordenades.longitud}) a per la comanda {comanda.id} ({comanda.especialitat.especialitat}).")
 
             motxilla.append(restaurant)
-            capacitat_actual += restaurant.especialitat.pes
-            ubicacio_actual = restaurant.coordenades
+            capacitatActual += restaurant.especialitat.pes
+            ubicacioActual = restaurant.coordenades
 
             if not repetirRestaurants:
                 restaurants.remove(restaurant)
     
-    print(f"\tLa motxilla s'ha omplert amb {capacitat_actual}g de {capacitat_maxima}g i s'ha visitat {len(motxilla)} restaurants.")
+    print(f"\tLa motxilla s'ha omplert amb {capacitatActual}g de {capacitatMaxima}g i s'ha visitat {len(motxilla)} restaurants.")
 
-    return motxilla, capacitat_actual, ubicacio_actual, comandes, restaurants
+    return motxilla, capacitatActual, ubicacioActual, comandes, restaurants
 
 
 if __name__ == "__main__":
     # Variables globals
-    CAPACITAT_MAXIMA = 12*10**3
+    CAPACITATMAXIMA = 12*10**3
 
     # Oficina de la startup
     tecnocampus: Coordenada = Coordenada(41.528154350078815, 2.4346229558256196)
@@ -181,8 +181,8 @@ if __name__ == "__main__":
         Restaurant("Omnia Cafe-Bar", "Palmerola 4",                                    especialitats["CATALANA"],   Coordenada(41.53860711852714,  2.4414085192527155))
     ]
 
-    # map_generator = MapGenerator(tecnocampus, comandes, restaurants, especialitats)
-    # map_generator.generateMap()
+    # mapGenerator = MapGenerator(tecnocampus, comandes, restaurants, especialitats)
+    # mapGenerator.generateMap()
 
     # print("Mapa generat correctament")
 
@@ -191,11 +191,11 @@ if __name__ == "__main__":
     repetirRestaurants: bool = input("Un restaurant pot preparar més d'una comanda? (s/n) ").lower() == "s"
 
     comandesRestants: List[Comanda] = comandes.copy()
-    ubicacio_actual: Coordenada = tecnocampus
+    ubicacioActual: Coordenada = tecnocampus
     restaurantsNoVisitats: List[Restaurant] = restaurants.copy()
 
     while len(comandesRestants) > 0:
         print(f"Anem a recollir comandes fins a omplir la motxilla.")
-        motxilla, capacitat_actual, ubicacio_actual, comandesRestants, restaurantsNoVisitats = omplirMotxilla(ubicacio_actual, comandesRestants, 1000, restaurantsNoVisitats, repetirRestaurants)
+        motxilla, capacitatActual, ubicacioActual, comandesRestants, restaurantsNoVisitats = omplirMotxilla(ubicacioActual, comandesRestants, CAPACITATMAXIMA, restaurantsNoVisitats, repetirRestaurants)
         print(f"Queden {len(comandesRestants)} comandes per recollir.")
         print()
