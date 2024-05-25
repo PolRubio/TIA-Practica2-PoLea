@@ -6,7 +6,7 @@ from domain.restaurant import Restaurant
 from domain.especialitat import Especialitat
 from domain.mapGenerator import MapGenerator
 
-def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Comanda], float, Coordenada, List[Comanda], List[Restaurant]]:
+def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Comanda], float, Coordenada, List[Comanda], List[Restaurant], List[Coordenada]]:
     """
     Funció que simula l'ompliment d'una motxilla amb comandes recollides en restaurants.
 
@@ -36,12 +36,14 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
             - Coordenada final de la ubicació actual.
             - Llista de comandes no lliurades.
             - Llista de restaurants restants.
+            - Llista de coordenades de la ruta.
     """
     
     ubicacioActual: Coordenada = inici
     motxilla: List[Comanda] = []
     capacitatActual: int = 0
     distanciaRecorreguda: float = 0
+    ruta: List[Coordenada] = [ubicacioActual]
 
     comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis)
 
@@ -64,6 +66,7 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
             capacitatActual += restaurant.especialitat.pes
             ubicacioActual = restaurant.coordenades
             distanciaRecorreguda += distanciaMinima
+            ruta.append(ubicacioActual)
 
             if not repetirRestaurants:
                 restaurants.remove(restaurant)
@@ -73,10 +76,10 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     
     print(f"\t\tLa motxilla s'ha omplert amb {capacitatActual} g de {capacitatMaxima} g i s'han visitat {len(motxilla)} restaurants.")
 
-    return motxilla, distanciaRecorreguda, ubicacioActual, comandes, restaurants
+    return motxilla, distanciaRecorreguda, ubicacioActual, comandes, restaurants, ruta
 
 
-def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float, Coordenada]:
+def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float, Coordenada, List[Coordenada]]:
     """
     Funció que simula l'entrega de comandes a partir d'una motxilla de restaurants.
 
@@ -94,11 +97,12 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
         Tuple[float, Coordenada, List[Comanda]]: 
             - Distància total recorreguda.
             - Coordenada final de la ubicació actual.
+            - Llista de coordenades de la ruta.
     """
 
     ubicacioActual: Coordenada = inici
     distanciaRecorreguda: float = 0
-
+    ruta: List[Coordenada] = [ubicacioActual]
 
     motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis)
 
@@ -117,12 +121,13 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
 
         ubicacioActual = comanda.coordenades
         distanciaRecorreguda += distanciaMinima
+        ruta.append(ubicacioActual)
 
         motxilla.remove(comanda)
 
     print(f"\t\tTotes les comandes han estat lliurades correctament i s'han recorregut {round(distanciaRecorreguda, 2)} metres.")
 
-    return distanciaRecorreguda, ubicacioActual
+    return distanciaRecorreguda, ubicacioActual, ruta
 
 if __name__ == "__main__":
     # Variables globals
@@ -258,10 +263,6 @@ if __name__ == "__main__":
         Restaurant("Omnia Cafe-Bar", "Palmerola 4",                                    especialitats["CATALANA"],   Coordenada(41.53860711852714,  2.4414085192527155))
     ]
 
-    # mapGenerator = MapGenerator(tecnocampus, comandes, restaurants, especialitats)
-    # mapGenerator.generateMap()
-
-    # print("Mapa generat correctament")
 
     input("\nPrem ENTER per començar a recollir comandes...")
 
@@ -271,17 +272,34 @@ if __name__ == "__main__":
     ubicacioActual: Coordenada = tecnocampus
     restaurantsNoVisitats: List[Restaurant] = restaurants.copy()
     distanciaTotal: float = 0
+    numeroRecollides: int = 0
+    
+    mapa = MapGenerator(tecnocampus, comandes, restaurants, especialitats)
+    mapa.generateInitialMap()
+
+    print("Mapa generat correctament")
 
     while len(comandesRestants) > 0:
+        numeroRecollides += 1
         print(f"\tAnem a recollir comandes fins a omplir la motxilla.")
-        motxilla, distancia, ubicacioActual, comandesRestants, restaurantsNoVisitats = omplirMotxilla(ubicacioActual, comandesRestants, 1000, restaurantsNoVisitats, repetirRestaurants)
+        motxilla, distancia, ubicacioActual, comandesRestants, restaurantsNoVisitats, ruta = omplirMotxilla(ubicacioActual, comandesRestants, 1000, restaurantsNoVisitats, repetirRestaurants)
         distanciaTotal += distancia
+        mapa.afegirRuta(ruta, f"Recollida número {numeroRecollides}", "blue")
+        
         print(f"\tQueden {len(comandesRestants)} comandes per recollir.")
         print()
         print(f"\tAnem a entregar les comandes recollides.")
-        distancia, ubicacioActual = entregarComandes(ubicacioActual, motxilla)
+        
+        distancia, ubicacioActual, ruta = entregarComandes(ubicacioActual, motxilla)
         distanciaTotal += distancia
+        mapa.afegirRuta(ruta, f"Lliurament número {numeroRecollides}", "red")
+
         print()
         print()
 
+    distanciaTotal += ubicacioActual.distancia(tecnocampus)
+    mapa.afegirRuta([ubicacioActual, tecnocampus], "Tornada a l'oficina", "green")
+
     print(f"Totes les comandes han estat recollides i entregades correctament. En total s'han recorregut {round(distanciaTotal/10**3, 2)} kilometres.")
+    outputPath = mapa.save()
+    print(f"Mapa guardat correctament. Ho pots veure fent obrint el següent enllaç: file://{outputPath}")
