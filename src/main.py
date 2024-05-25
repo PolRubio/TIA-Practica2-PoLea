@@ -6,9 +6,9 @@ from domain.restaurant import Restaurant
 from domain.especialitat import Especialitat
 from domain.mapGenerator import MapGenerator
 
-def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Restaurant], float, Coordenada, List[Comanda], List[Restaurant]]:
+def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Comanda], float, Coordenada, List[Comanda], List[Restaurant]]:
     """
-    Funció que simula l'ompliment d'una motxilla amb restaurants i realitza entregues de comandes.
+    Funció que simula l'ompliment d'una motxilla amb comandes recollides en restaurants.
 
     Heurística per determinar les comandes:
         La funció ordena la llista de comandes en funció del temps de compromís de cada comanda.
@@ -39,7 +39,7 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     """
     
     ubicacioActual: Coordenada = inici
-    motxilla: List[Restaurant] = []
+    motxilla: List[Comanda] = []
     capacitatActual: int = 0
     distanciaRecorreguda: float = 0
 
@@ -58,19 +58,71 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
                     restaurant = r
 
         if restaurant is not None:
-            print(f"\tAnem al restaurant {restaurant.nom} ({restaurant.especialitat.especialitat}) que està a {round(distanciaMinima, 2)} metres a les coordenades ({restaurant.coordenades.latitud}, {restaurant.coordenades.longitud}) a per la comanda {comanda.id} ({comanda.especialitat.especialitat}).")
+            print(f"\t\tAnem al restaurant {restaurant.nom} ({restaurant.especialitat.especialitat}) que està a {round(distanciaMinima, 2)} metres a les coordenades ({restaurant.coordenades.latitud}, {restaurant.coordenades.longitud}) a per la comanda {comanda.id} ({comanda.especialitat.especialitat}).")
 
-            motxilla.append(restaurant)
+            motxilla.append(comanda)
             capacitatActual += restaurant.especialitat.pes
             ubicacioActual = restaurant.coordenades
             distanciaRecorreguda += distanciaMinima
 
             if not repetirRestaurants:
                 restaurants.remove(restaurant)
+        else:
+            print(f"\t\tNo hi ha cap restaurant que ofereixi la especialitat {comanda.especialitat.especialitat} a prop de la ubicació actual.")
+            Exception(f"No hi ha cap restaurant que ofereixi la especialitat {comanda.especialitat.especialitat} a prop de la ubicació actual.")
     
-    print(f"\tLa motxilla s'ha omplert amb {capacitatActual} g de {capacitatMaxima} g i s'han visitat {len(motxilla)} restaurants.")
+    print(f"\t\tLa motxilla s'ha omplert amb {capacitatActual} g de {capacitatMaxima} g i s'han visitat {len(motxilla)} restaurants.")
 
     return motxilla, distanciaRecorreguda, ubicacioActual, comandes, restaurants
+
+
+def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float, Coordenada]:
+    """
+    Funció que simula l'entrega de comandes a partir d'una motxilla de restaurants.
+
+    Heurística per determinar les comandes:
+        La funció ordena la llista de comandes en funció del temps de compromís de cada comanda.
+        De las comandes de la mateixa especialitat, ergo amb el mateix temps de compromís, s'entrega la comanda més propera.
+
+    
+    Args:
+        inici (Coordenada): Coordenada inicial de la ubicació actual.
+        motxilla (List[Restaurant]): Llista de restaurants a la motxilla.
+        comandes (List[Comanda]): Llista de comandes a lliurar.
+    
+    Returns:
+        Tuple[float, Coordenada, List[Comanda]]: 
+            - Distància total recorreguda.
+            - Coordenada final de la ubicació actual.
+    """
+
+    ubicacioActual: Coordenada = inici
+    distanciaRecorreguda: float = 0
+
+
+    motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis)
+
+    while len(motxilla) > 0:
+        comanda: Comanda = motxilla[0]
+        distanciaMinima: float = float("inf")
+
+        for r in motxilla:
+            if r.especialitat == comanda.especialitat:
+                distancia: float = ubicacioActual.distancia(r.coordenades)
+                if distancia < distanciaMinima:
+                    distanciaMinima = distancia
+                    comanda = r
+
+        print(f"\t\tAnem a lliurar la comanda {comanda.id} ({comanda.especialitat.especialitat}) que està a {round(distanciaMinima, 2)} metres a les coordenades ({comanda.coordenades.latitud}, {comanda.coordenades.longitud}).")
+
+        ubicacioActual = comanda.coordenades
+        distanciaRecorreguda += distanciaMinima
+
+        motxilla.remove(comanda)
+
+    print(f"\t\tTotes les comandes han estat lliurades correctament i s'han recorregut {round(distanciaRecorreguda, 2)} metres.")
+
+    return distanciaRecorreguda, ubicacioActual
 
 if __name__ == "__main__":
     # Variables globals
@@ -211,7 +263,7 @@ if __name__ == "__main__":
 
     # print("Mapa generat correctament")
 
-    input("Prem ENTER per començar a recollir comandes...")
+    input("\nPrem ENTER per començar a recollir comandes...")
 
     repetirRestaurants: bool = input("Un restaurant pot preparar més d'una comanda? (s/n) ").lower() == "s"
 
@@ -221,10 +273,15 @@ if __name__ == "__main__":
     distanciaTotal: float = 0
 
     while len(comandesRestants) > 0:
-        print(f"Anem a recollir comandes fins a omplir la motxilla.")
-        motxilla, distancia, ubicacioActual, comandesRestants, restaurantsNoVisitats = omplirMotxilla(ubicacioActual, comandesRestants, CAPACITATMAXIMA, restaurantsNoVisitats, repetirRestaurants)
+        print(f"\tAnem a recollir comandes fins a omplir la motxilla.")
+        motxilla, distancia, ubicacioActual, comandesRestants, restaurantsNoVisitats = omplirMotxilla(ubicacioActual, comandesRestants, 1000, restaurantsNoVisitats, repetirRestaurants)
         distanciaTotal += distancia
-        print(f"Queden {len(comandesRestants)} comandes per recollir.")
+        print(f"\tQueden {len(comandesRestants)} comandes per recollir.")
+        print()
+        print(f"\tAnem a entregar les comandes recollides.")
+        distancia, ubicacioActual = entregarComandes(ubicacioActual, motxilla)
+        distanciaTotal += distancia
+        print()
         print()
 
     print(f"Totes les comandes han estat recollides i entregades correctament. En total s'han recorregut {round(distanciaTotal/10**3, 2)} kilometres.")
