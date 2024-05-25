@@ -8,19 +8,44 @@ from domain.mapGenerator import MapGenerator
 
 def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Restaurant], float, Coordenada, List[Comanda], List[Restaurant]]:
     """
-    Retorna la llista de restaurants que s'han de visitar per plenar la motxilla amb les comandes amb més compromís.
+    Funció que simula l'ompliment d'una motxilla amb restaurants i realitza entregues de comandes.
+
+    Heurística per determinar les comandes:
+        La funció ordena la llista de comandes en funció del temps de compromís de cada comanda.
+        S'assegura que la comanda amb el temps de compromís més alt sigui processada primer.
+        Això ajuda a prioritzar les comandes urgents i garanteix que es lliurin a temps.
+        El temps de compromís ve determinat per l'especialitat de la comanda. Cada especialitat té un temps de compromís diferent.
+    
+    Heurística per determinar els restaurants:
+        La funció selecciona el restaurant més proper a la ubicació actual i que ofereixi l'especialitat amb el temps de compromís més alt.
+        Itera pels restaurants disponibles i calcula la distància entre la ubicació actual i cada restaurant.
+        Se selecciona el restaurant amb la distància més curta i que coincideixi amb l'especialitat.
+        Si l'opció de repetir restaurants està desactivada, el restaurant seleccionat s'elimina de la llista de restaurants disponibles.
+    
+    Args:
+        inici (Coordenada): Coordenada inicial de la ubicació actual.
+        comandes (List[Comanda]): Llista de comandes a lliurar.
+        capacitatMaxima (int): Capacitat màxima de la motxilla.
+        restaurants (List[Restaurant]): Llista de restaurants disponibles.
+        repetirRestaurants (bool): Indica si es poden repetir els restaurants visitats.
+    
+    Returns:
+        Tuple[List[Restaurant], float, Coordenada, List[Comanda], List[Restaurant]]: 
+            - Llista de restaurants a la motxilla.
+            - Distància total recorreguda.
+            - Coordenada final de la ubicació actual.
+            - Llista de comandes no lliurades.
+            - Llista de restaurants restants.
     """
+    
     ubicacioActual: Coordenada = inici
     motxilla: List[Restaurant] = []
     capacitatActual: int = 0
     distanciaRecorreguda: float = 0
 
-    # Ordenem les comandes per temps de compromís
     comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis)
 
-    # Mentre la capacitat de la motxilla no sigui suficient o no quedin comandes
     while len(comandes) > 0 and capacitatActual+comandes[0].especialitat.pes <= capacitatMaxima:
-        # Busquem el restaurant més proper amb la especialitat de la comanda amb més compromís
         comanda: Comanda = comandes.pop(0)
         restaurant: Optional[Restaurant] = None
         distanciaMinima: float = float("inf")
@@ -46,7 +71,6 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     print(f"\tLa motxilla s'ha omplert amb {capacitatActual} g de {capacitatMaxima} g i s'han visitat {len(motxilla)} restaurants.")
 
     return motxilla, distanciaRecorreguda, ubicacioActual, comandes, restaurants
-
 
 if __name__ == "__main__":
     # Variables globals
