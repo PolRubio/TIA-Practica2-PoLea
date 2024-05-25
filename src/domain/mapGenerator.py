@@ -3,10 +3,10 @@ import pandas as pd
 import folium
 import folium.plugins as folium_plugins
 
-from coordenada import Coordenada
-from comanda import Comanda
-from restaurant import Restaurant
-from especialitat import Especialitat
+from domain.coordenada import Coordenada
+from domain.comanda import Comanda
+from domain.restaurant import Restaurant
+from domain.especialitat import Especialitat
 
 class MapGenerator:
     def __init__(self, tecnocampus: Coordenada, comandes: List[Comanda], restaurants: List[Restaurant], especialitats: Dict[str, Especialitat]):
