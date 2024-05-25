@@ -6,13 +6,14 @@ from domain.restaurant import Restaurant
 from domain.especialitat import Especialitat
 from domain.mapGenerator import MapGenerator
 
-def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Restaurant], int, Coordenada, List[Comanda], List[Restaurant]]:
+def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Restaurant], float, Coordenada, List[Comanda], List[Restaurant]]:
     """
     Retorna la llista de restaurants que s'han de visitar per plenar la motxilla amb les comandes amb més compromís.
     """
     ubicacioActual: Coordenada = inici
     motxilla: List[Restaurant] = []
     capacitatActual: int = 0
+    distanciaRecorreguda: float = 0
 
     # Ordenem les comandes per temps de compromís
     comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis)
@@ -30,21 +31,21 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
                 if distancia < distanciaMinima:
                     distanciaMinima = distancia
                     restaurant = r
-            
 
         if restaurant is not None:
-            print(f"\tAnem al restaurant {restaurant.nom} ({restaurant.especialitat.especialitat}) que està a {round(distanciaMinima, 2)}m a les coordenades ({restaurant.coordenades.latitud}, {restaurant.coordenades.longitud}) a per la comanda {comanda.id} ({comanda.especialitat.especialitat}).")
+            print(f"\tAnem al restaurant {restaurant.nom} ({restaurant.especialitat.especialitat}) que està a {round(distanciaMinima, 2)} metres a les coordenades ({restaurant.coordenades.latitud}, {restaurant.coordenades.longitud}) a per la comanda {comanda.id} ({comanda.especialitat.especialitat}).")
 
             motxilla.append(restaurant)
             capacitatActual += restaurant.especialitat.pes
             ubicacioActual = restaurant.coordenades
+            distanciaRecorreguda += distanciaMinima
 
             if not repetirRestaurants:
                 restaurants.remove(restaurant)
     
-    print(f"\tLa motxilla s'ha omplert amb {capacitatActual}g de {capacitatMaxima}g i s'ha visitat {len(motxilla)} restaurants.")
+    print(f"\tLa motxilla s'ha omplert amb {capacitatActual} g de {capacitatMaxima} g i s'han visitat {len(motxilla)} restaurants.")
 
-    return motxilla, capacitatActual, ubicacioActual, comandes, restaurants
+    return motxilla, distanciaRecorreguda, ubicacioActual, comandes, restaurants
 
 
 if __name__ == "__main__":
@@ -193,9 +194,13 @@ if __name__ == "__main__":
     comandesRestants: List[Comanda] = comandes.copy()
     ubicacioActual: Coordenada = tecnocampus
     restaurantsNoVisitats: List[Restaurant] = restaurants.copy()
+    distanciaTotal: float = 0
 
     while len(comandesRestants) > 0:
         print(f"Anem a recollir comandes fins a omplir la motxilla.")
-        motxilla, capacitatActual, ubicacioActual, comandesRestants, restaurantsNoVisitats = omplirMotxilla(ubicacioActual, comandesRestants, CAPACITATMAXIMA, restaurantsNoVisitats, repetirRestaurants)
+        motxilla, distancia, ubicacioActual, comandesRestants, restaurantsNoVisitats = omplirMotxilla(ubicacioActual, comandesRestants, CAPACITATMAXIMA, restaurantsNoVisitats, repetirRestaurants)
+        distanciaTotal += distancia
         print(f"Queden {len(comandesRestants)} comandes per recollir.")
         print()
+
+    print(f"Totes les comandes han estat recollides i entregades correctament. En total s'han recorregut {round(distanciaTotal/10**3, 2)} kilometres.")
