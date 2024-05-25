@@ -198,5 +198,8 @@ entregas = ordenar_entregas(pedidos, initial_location)
 imprimir_paradas_estados(recogidas, entregas)
 
 # print the detailed and complete info of the first comanda
+# Variables finals
+CAPACITAT_MAXIMA = 12000
+
 print(f"Comanda {comandes[0].id}: {comandes[0].especialitat.especialitat} - {comandes[0].carrer} - {comandes[0].coordenades.latitud} - {comandes[0].coordenades.longitud}")
 print(f"Restaurant: {restaurants[0].nom} - {restaurants[0].especialitat.especialitat} - {restaurants[0].coordenades.latitud} - {restaurants[0].coordenades.longitud}")
