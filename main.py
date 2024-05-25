@@ -21,9 +21,10 @@ class Comanda:
         self.coordenades: Coordenada = coordenades
 
 class Restaurant:
-    def __init__(self, especialitat: Especialitat, nom: str, coordenades: Coordenada) -> None:
-        self.especialitat: Especialitat = especialitat
+    def __init__(self, nom: str, carrer: str, especialitat: Especialitat, coordenades: Coordenada) -> None:
         self.nom: str = nom
+        self.carrer: str = carrer
+        self.especialitat: Especialitat = especialitat
         self.coordenades: Coordenada = coordenades
 
 # Oficina de la startup
