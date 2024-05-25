@@ -1,12 +1,16 @@
 from typing import List, Dict
 import pandas as pd
 from geopy.distance import geodesic
+import numpy as np
+import folium
+from folium import plugins as folium_plugins
 
 class Especialitat:
-    def __init__(self, especialitat: str, compromis: int, pes: int) -> None:
+    def __init__(self, especialitat: str, compromis: int, pes: int, color_marcador: str) -> None:
         self.especialitat: str = especialitat
         self.compromis: int = compromis
         self.pes: int = pes
+        self.color_marcador: str = color_marcador
 
 class Coordenada:
     def __init__(self, latitud: float, longitud: float) -> None:
@@ -27,25 +31,64 @@ class Restaurant:
         self.especialitat: Especialitat = especialitat
         self.coordenades: Coordenada = coordenades
 
+class MapGenerator:
+    def __init__(self, tecnocampus, comandes, restaurants, especialitats):
+        self.tecnocampus = tecnocampus
+        self.comandes = comandes
+        self.restaurants = restaurants
+        self.especialitats = especialitats
+
+    def puntMig(self) -> List[float]:
+        coordenades = [comanda.coordenades for comanda in self.comandes] + [restaurant.coordenades for restaurant in self.restaurants]
+        df = pd.DataFrame([(coordenada.latitud, coordenada.longitud) for coordenada in coordenades], columns=["latitud", "longitud"])
+        punt_mig = df.mean()
+        return [punt_mig["latitud"], punt_mig["longitud"]]
+
+    def generateMap(self, html_file: str = "mapa.html") -> None:
+        mapa = folium.Map(location=self.puntMig(), zoom_start=14)
+        folium.Marker([self.tecnocampus.latitud, self.tecnocampus.longitud],
+                      icon=folium.Icon(color='gray', icon='flag'),
+                      popup="Tecnocampus").add_to(mapa)
+
+        all_marcadors = folium.FeatureGroup("Totes les parades").add_to(mapa)
+
+        grups_especialitats = {}
+        for especialitat in self.especialitats.values():
+            grups_especialitats[especialitat.especialitat] = folium_plugins.FeatureGroupSubGroup(all_marcadors, especialitat.especialitat)
+            grups_especialitats[especialitat.especialitat].add_to(mapa)
+
+        for comanda in self.comandes:
+            folium.Marker([comanda.coordenades.latitud, comanda.coordenades.longitud],
+                          icon=folium.Icon(color=comanda.especialitat.color_marcador, icon='home'),
+                          popup=f"Comanda {comanda.id} - {comanda.especialitat.especialitat}").add_to(grups_especialitats[comanda.especialitat.especialitat])
+
+        for restaurant in self.restaurants:
+            folium.Marker([restaurant.coordenades.latitud, restaurant.coordenades.longitud],
+                          icon=folium.Icon(color=restaurant.especialitat.color_marcador, icon='cutlery'),
+                          popup=f"Restaurant {restaurant.nom} - {restaurant.especialitat.especialitat}").add_to(grups_especialitats[restaurant.especialitat.especialitat])
+
+        folium.LayerControl().add_to(mapa)
+        mapa.save(html_file)
+
 # Oficina de la startup
 tecnocampus: Coordenada = Coordenada(41.528154350078815, 2.4346229558256196)
 
 # Especialitats
 especialitats: Dict[str, Especialitat] = {
-    "AFRICANA":   Especialitat("Africana",   35, 400),
-    "ALEMANYA":   Especialitat("Alemanya",   38, 380),
-    "AMERICANA":  Especialitat("Americana",  25, 425),
-    "ARGENTINA":  Especialitat("Argentina",  24, 450),
-    "CATALANA":   Especialitat("Catalana",   15, 400),
-    "FRANCESA":   Especialitat("Francesa",   17, 395),
-    "HINDU":      Especialitat("Hindú",      12, 410),
-    "ITALIANA":   Especialitat("Italiana",   20, 440),
-    "JAPONESA":   Especialitat("Japonesa",   30, 300),
-    "MEXICANA":   Especialitat("Mexicana",   18, 370),
-    "PERUANA":    Especialitat("Peruana",    16, 405),
-    "TAILANDESA": Especialitat("Tailandesa", 19, 385),
-    "VENEÇOLANA": Especialitat("Veneçolana", 28, 395),
-    "XINESA":     Especialitat("Xinesa",     32, 350)
+    "AFRICANA":   Especialitat("Africana",   35, 400, "red"),
+    "ALEMANYA":   Especialitat("Alemanya",   38, 380, "darkred"),
+    "AMERICANA":  Especialitat("Americana",  25, 425, "orange"),
+    "ARGENTINA":  Especialitat("Argentina",  24, 450, "beige"),
+    "CATALANA":   Especialitat("Catalana",   15, 400, "green"),
+    "FRANCESA":   Especialitat("Francesa",   17, 395, "darkgreen"),
+    "HINDU":      Especialitat("Hindu",      12, 410, "lightgreen"),
+    "ITALIANA":   Especialitat("Italiana",   20, 440, "blue"),
+    "JAPONESA":   Especialitat("Japonesa",   30, 300, "darkblue"),
+    "MEXICANA":   Especialitat("Mexicana",   18, 370, "cadetblue"),
+    "PERUANA":    Especialitat("Peruana",    16, 405, "lightblue"),
+    "TAILANDESA": Especialitat("Tailandesa", 19, 385, "purple"),
+    "VENEÇOLANA": Especialitat("Veneçolana", 28, 395, "darkpurple"),
+    "XINESA":     Especialitat("Xinesa",     32, 350, "pink")
 }
 
 # Comandes i Restaurants
@@ -154,9 +197,13 @@ restaurants: List[Restaurant] = [
     Restaurant("Rosita", "Plaça Santa Anna",                                       especialitats["CATALANA"],   Coordenada(41.538121476352245, 2.4447740247339658)),
     Restaurant("Atlantida", "Estrasburg 5",                                        especialitats["ITALIANA"],   Coordenada(41.554777443937844, 2.433533795898745)),
     Restaurant("Pizzeria Catània", "Sant Isidor 78",                               especialitats["ITALIANA"],   Coordenada(41.54347796214908,  2.439684024734263)),
-    Restaurant("Omnia Cafe-Bar", "Palmerola 4",                                    especialitats["CATALANA"],   Coordenada(41.53860711852714,  2.4414085192527155)),
+    Restaurant("Omnia Cafe-Bar", "Palmerola 4",                                    especialitats["CATALANA"],   Coordenada(41.53860711852714,  2.4414085192527155))
 ]
 
 # Variables finals
 CAPACITAT_MAXIMA = 12000
 
+
+# Usage:
+map_generator = MapGenerator(tecnocampus, comandes, restaurants, especialitats)
+map_generator.generateMap()
