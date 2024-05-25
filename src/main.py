@@ -1,9 +1,9 @@
-from typing import List, Dict, Optional, Tuple
+from typing import List, Optional, Tuple
+import argparse, os
 
 from domain.coordenada import Coordenada
 from domain.comanda import Comanda
 from domain.restaurant import Restaurant
-from domain.especialitat import Especialitat
 from domain.mapGenerator import MapGenerator
 from data.data import comandes, restaurants, especialitats, tecnocampus
 
@@ -129,21 +129,14 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
 
     return distanciaRecorreguda, ubicacioActual, ruta
 
-if __name__ == "__main__":
-    # Variables globals
-    CAPACITATMAXIMA = 12*10**3
-
-    input("\nPrem ENTER per començar a recollir comandes...")
-
-    repetirRestaurants: bool = input("Un restaurant pot preparar més d'una comanda? (s/n) ").lower() == "s"
-
+def main(capacitatMaxima: int, repetirRestaurants: bool, outputFolder: str, outputFileName: str) -> None:
     comandesRestants: List[Comanda] = comandes.copy()
     ubicacioActual: Coordenada = tecnocampus
     restaurantsNoVisitats: List[Restaurant] = restaurants.copy()
     distanciaTotal: float = 0
     numeroRecollides: int = 0
     
-    mapa = MapGenerator(tecnocampus, comandes, restaurants, especialitats)
+    mapa = MapGenerator(tecnocampus, comandes, restaurants, especialitats, outputFolder)
     mapa.generateInitialMap()
 
     print("Mapa generat correctament")
@@ -151,7 +144,7 @@ if __name__ == "__main__":
     while len(comandesRestants) > 0:
         numeroRecollides += 1
         print(f"\tAnem a recollir comandes fins a omplir la motxilla.")
-        motxilla, distancia, ubicacioActual, comandesRestants, restaurantsNoVisitats, ruta = omplirMotxilla(ubicacioActual, comandesRestants, CAPACITATMAXIMA, restaurantsNoVisitats, repetirRestaurants)
+        motxilla, distancia, ubicacioActual, comandesRestants, restaurantsNoVisitats, ruta = omplirMotxilla(ubicacioActual, comandesRestants, capacitatMaxima, restaurantsNoVisitats, repetirRestaurants)
         distanciaTotal += distancia
         mapa.afegirRuta(ruta, f"Recollida número {numeroRecollides}", "blue")
         
@@ -170,5 +163,19 @@ if __name__ == "__main__":
     mapa.afegirRuta([ubicacioActual, tecnocampus], "Tornada a l'oficina", "green")
 
     print(f"Totes les comandes han estat recollides i entregades correctament. En total s'han recorregut {round(distanciaTotal/10**3, 2)} kilometres.")
-    outputPath = mapa.save()
+    outputPath = mapa.save(outputFileName)
     print(f"Mapa guardat correctament. Ho pots veure fent obrint el següent enllaç: file://{outputPath}")
+
+if __name__ == "__main__":
+    # argparse
+    parser = argparse.ArgumentParser(description="Simulador de l'ompliment d'una motxilla amb comandes recollides en restaurants i l'entrega de les comandes.")
+    
+    parser.add_argument("--no-repetirRestaurants", dest="repetirRestaurants", action="store_false", default=True, help="No permet als restaurants preparar més d'una comanda.")
+    parser.add_argument("--capacitatMaxima", type=int, default=12000, help="Capacitat màxima de la motxilla.")
+    parser.add_argument("--outputFolder", type=str, default=os.path.join(os.path.dirname(__file__), "out"), help="Carpeta on es guardaran els mapes generats.")
+    parser.add_argument("--outputFileName", type=str, default="mapa.html", help="Nom del fitxer on es guardarà el mapa generat.")
+    
+    args = parser.parse_args()
+
+    input("\nPrem ENTER per començar a recollir comandes...")
+    main(args.capacitatMaxima, args.repetirRestaurants, args.outputFolder, args.outputFileName)

@@ -11,7 +11,7 @@ from domain.especialitat import Especialitat
 
 class MapGenerator:
     def __init__(self, tecnocampus: Coordenada, comandes: List[Comanda], restaurants: List[Restaurant], especialitats: Dict[str, Especialitat],
-                  outputFolder: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), "out")) -> None:
+                  outputFolder: str) -> None:
         self.tecnocampus: Coordenada = tecnocampus
         self.comandes: List[Comanda] = comandes
         self.restaurants: List[Restaurant] = restaurants
