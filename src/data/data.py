@@ -4,6 +4,9 @@ from domain.comanda import Comanda
 from domain.restaurant import Restaurant
 from domain.especialitat import Especialitat
 
+# Oficina de la startup
+tecnocampus: Coordenada = Coordenada(41.528154350078815, 2.4346229558256196)
+
 # Especialitats
 especialitats: Dict[str, Especialitat] = {
     "AFRICANA":   Especialitat("Africana",   35, 400, "red"),

@@ -5,7 +5,7 @@ from domain.comanda import Comanda
 from domain.restaurant import Restaurant
 from domain.especialitat import Especialitat
 from domain.mapGenerator import MapGenerator
-from data.data import comandes, restaurants, especialitats
+from data.data import comandes, restaurants, especialitats, tecnocampus
 
 def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Comanda], float, Coordenada, List[Comanda], List[Restaurant], List[Coordenada]]:
     """
@@ -132,9 +132,6 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
 if __name__ == "__main__":
     # Variables globals
     CAPACITATMAXIMA = 12*10**3
-
-    # Oficina de la startup
-    tecnocampus: Coordenada = Coordenada(41.528154350078815, 2.4346229558256196)
 
     input("\nPrem ENTER per començar a recollir comandes...")
 
