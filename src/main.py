@@ -5,70 +5,11 @@ import numpy as np
 import folium
 from folium import plugins as folium_plugins
 
-class Especialitat:
-    def __init__(self, especialitat: str, compromis: int, pes: int, color_marcador: str) -> None:
-        self.especialitat: str = especialitat
-        self.compromis: int = compromis
-        self.pes: int = pes
-        self.color_marcador: str = color_marcador
-
-class Coordenada:
-    def __init__(self, latitud: float, longitud: float) -> None:
-        self.latitud: float = latitud
-        self.longitud: float = longitud
-
-class Comanda:
-    def __init__(self, id: int, especialitat: Especialitat, carrer: str, coordenades: Coordenada) -> None:
-        self.id: int = id
-        self.especialitat: Especialitat = especialitat
-        self.carrer: str = carrer
-        self.coordenades: Coordenada = coordenades
-
-class Restaurant:
-    def __init__(self, nom: str, carrer: str, especialitat: Especialitat, coordenades: Coordenada) -> None:
-        self.nom: str = nom
-        self.carrer: str = carrer
-        self.especialitat: Especialitat = especialitat
-        self.coordenades: Coordenada = coordenades
-
-class MapGenerator:
-    def __init__(self, tecnocampus, comandes, restaurants, especialitats):
-        self.tecnocampus = tecnocampus
-        self.comandes = comandes
-        self.restaurants = restaurants
-        self.especialitats = especialitats
-
-    def puntMig(self) -> List[float]:
-        coordenades = [comanda.coordenades for comanda in self.comandes] + [restaurant.coordenades for restaurant in self.restaurants]
-        df = pd.DataFrame([(coordenada.latitud, coordenada.longitud) for coordenada in coordenades], columns=["latitud", "longitud"])
-        punt_mig = df.mean()
-        return [punt_mig["latitud"], punt_mig["longitud"]]
-
-    def generateMap(self, html_file: str = "mapa.html") -> None:
-        mapa = folium.Map(location=self.puntMig(), zoom_start=14)
-        folium.Marker([self.tecnocampus.latitud, self.tecnocampus.longitud],
-                      icon=folium.Icon(color='gray', icon='flag'),
-                      popup="Tecnocampus").add_to(mapa)
-
-        all_marcadors = folium.FeatureGroup("Totes les parades").add_to(mapa)
-
-        grups_especialitats = {}
-        for especialitat in self.especialitats.values():
-            grups_especialitats[especialitat.especialitat] = folium_plugins.FeatureGroupSubGroup(all_marcadors, especialitat.especialitat)
-            grups_especialitats[especialitat.especialitat].add_to(mapa)
-
-        for comanda in self.comandes:
-            folium.Marker([comanda.coordenades.latitud, comanda.coordenades.longitud],
-                          icon=folium.Icon(color=comanda.especialitat.color_marcador, icon='home'),
-                          popup=f"Comanda {comanda.id} - {comanda.especialitat.especialitat}").add_to(grups_especialitats[comanda.especialitat.especialitat])
-
-        for restaurant in self.restaurants:
-            folium.Marker([restaurant.coordenades.latitud, restaurant.coordenades.longitud],
-                          icon=folium.Icon(color=restaurant.especialitat.color_marcador, icon='cutlery'),
-                          popup=f"Restaurant {restaurant.nom} - {restaurant.especialitat.especialitat}").add_to(grups_especialitats[restaurant.especialitat.especialitat])
-
-        folium.LayerControl().add_to(mapa)
-        mapa.save(html_file)
+from coordenada import Coordenada
+from comanda import Comanda
+from restaurant import Restaurant
+from especialitat import Especialitat
+from mapGenerator import MapGenerator
 
 # Oficina de la startup
 tecnocampus: Coordenada = Coordenada(41.528154350078815, 2.4346229558256196)
@@ -202,7 +143,6 @@ restaurants: List[Restaurant] = [
 
 # Variables finals
 CAPACITAT_MAXIMA = 12000
-
 
 # Usage:
 map_generator = MapGenerator(tecnocampus, comandes, restaurants, especialitats)
