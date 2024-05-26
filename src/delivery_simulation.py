@@ -139,8 +139,6 @@ def main(capacitatMaxima: int, repetirRestaurants: bool, outputFolder: str, outp
     mapa = MapGenerator(tecnocampus, comandes, restaurants, especialitats, outputFolder)
     mapa.generateInitialMap()
 
-    print("Mapa generat correctament")
-
     while len(comandesRestants) > 0:
         numeroRecollides += 1
         print(f"\tAnem a recollir comandes fins a omplir la motxilla.")
