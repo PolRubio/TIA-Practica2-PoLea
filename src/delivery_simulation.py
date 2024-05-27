@@ -46,9 +46,9 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     distanciaRecorreguda: float = 0
     ruta: List[Coordenada] = [ubicacioActual]
 
-    comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis)
+    comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis) #TODO: Hill Climbing
 
-    while len(comandes) > 0 and capacitatActual+comandes[0].especialitat.pes <= capacitatMaxima:
+    while len(comandes) > 0 and capacitatActual+comandes[0].especialitat.pes <= capacitatMaxima: #TODO: BFS
         comanda: Comanda = comandes.pop(0)
         restaurant: Optional[Restaurant] = None
         distanciaMinima: float = float("inf")
@@ -104,9 +104,9 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
     distanciaRecorreguda: float = 0
     ruta: List[Coordenada] = [ubicacioActual]
 
-    motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis)
+    motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis) #TODO: Hill Climbing
 
-    while len(motxilla) > 0:
+    while len(motxilla) > 0: #TODO: BFS
         comanda: Comanda = motxilla[0]
         distanciaMinima: float = float("inf")
 
