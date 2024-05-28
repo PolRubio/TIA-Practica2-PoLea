@@ -162,7 +162,7 @@ def main(capacitatMaxima: int, repetirRestaurants: bool, outputFolder: str, outp
 
     print(f"Totes les comandes han estat recollides i entregades correctament. En total s'han recorregut {round(distanciaTotal/10**3, 2)} kilometres.")
     outputPath = mapa.save(outputFileName)
-    print(f"Mapa guardat correctament. Ho pots veure fent obrint el següent enllaç: file://{outputPath}")
+    print(f"Mapa guardat correctament. Ho pots veure obrint el següent enllaç: file://{outputPath}")
 
 if __name__ == "__main__":
     # argparse
