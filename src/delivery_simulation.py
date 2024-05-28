@@ -7,15 +7,100 @@ from domain.restaurant import Restaurant
 from domain.mapGenerator import MapGenerator
 from data.data import comandes, restaurants, especialitats, tecnocampus
 
-def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool) -> Tuple[List[Comanda], float, Coordenada, List[Comanda], List[Restaurant], List[Coordenada]]:
+def hillClimbing(comandes: List[Comanda], capacitatMaxima: int, iteracionsMaximes: int = 1000) -> Tuple[List[Comanda], List[Comanda]]:
+    """
+    Funció que implementa l'algorisme Hill Climbing per a la resolució del problema de la motxilla.
+
+    Args:
+        comandes (List[Comanda]): Llista de comandes a lliurar.
+        capacitatMaxima (int): Capacitat màxima de la motxilla.
+        iteracionsMaximes (int): Nombre màxim d'iteracions.
+
+    Returns:
+        Tuple[List[Comanda], List[Comanda]]:
+            - Llista de comandes programades per lliurar.
+            - Llista de comandes no programades per lliurar.
+    """
+
+    def fitness(comandes: List[Comanda], capacitatMaxima: int,) -> Tuple[float, int]:
+        """
+        Funció que calcula el fitness d'una solució.
+
+        Args:
+            comandes (List[Comanda]): Llista de comandes a lliurar.
+            capacitatMaxima (int): Capacitat màxima de la motxilla.
+
+        Returns:
+            Tuple[int, int]: Tupla amb el fitness de la solució i el nombre de comandes.
+        """
+        pesAcumulat: int = 0
+        numComandes: int = 0
+        sumCompromis: float = 0
+        for comanda in comandes:
+            if pesAcumulat + comanda.especialitat.pes > capacitatMaxima:
+                break
+            pesAcumulat += comanda.especialitat.pes
+            # El compromís de les comandes es multiplica per 0.9^numComandes
+            # L'objectiu és donar més pes a les comandes més urgents
+            # i garantir que dintre de la solució estiguin ordenades per compromís.
+            sumCompromis += comanda.especialitat.compromis * 0.9 ** numComandes 
+            numComandes += 1
+        return (-sumCompromis, numComandes)
+
+    def generarVeins(comandes: List[Comanda]) -> List[List[Comanda]]:
+        """
+        Funció que genera veins d'una solució.
+
+        Args:
+            comandes (List[Comanda]): Llista de comandes a lliurar.
+
+        Returns:
+            List[List[Comanda]]: Llista de veins de la solució.
+        """
+        veins: List[List[Comanda]] = []
+        for i in range(len(comandes)):
+            for j in range(i + 1, len(comandes)):
+                vei: List[Comanda] = comandes[:]
+                vei[i], vei[j] = vei[j], vei[i]
+                veins.append(vei)
+        return veins
+    
+    solucioActual: List[Comanda] = comandes[:]
+    fitnessAcutal: Tuple[float, int] = fitness(solucioActual, capacitatMaxima)
+    repeticions: int = 0
+    for i in range(iteracionsMaximes):
+        veins: List[List[Comanda]] = generarVeins(solucioActual)
+        veinsFitness: List[Tuple[Tuple[float, int], List[Comanda]]] = [(fitness(vei, capacitatMaxima), vei) for vei in veins]
+        millorFitness, millorVei = max(veinsFitness, key=lambda x: x[0])
+        if millorFitness > fitnessAcutal:
+            solucioActual = millorVei
+            fitnessAcutal = millorFitness
+            repeticions = 0
+        else:
+            repeticions += 1
+            if repeticions > iteracionsMaximes*0.1:
+                break
+        
+    solucioFinal: List[Comanda] = []
+    pesAcumulat: int = 0
+    for comanda in solucioActual[:]:
+        if pesAcumulat + comanda.especialitat.pes > capacitatMaxima:
+            break
+        pesAcumulat += comanda.especialitat.pes
+        solucioFinal.append(comanda)
+        solucioActual.remove(comanda)
+    return solucioFinal, solucioActual
+
+def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool)-> Tuple[List[Comanda], float, Coordenada, List[Comanda], List[Restaurant], List[Coordenada]]:
     """
     Funció que simula l'ompliment d'una motxilla amb comandes recollides en restaurants.
 
-    Heurística per determinar les comandes:
+    Heurística per determinar les comandes [Hill Climbing]:
         La funció ordena la llista de comandes en funció del temps de compromís de cada comanda.
         S'assegura que la comanda amb el temps de compromís més alt sigui processada primer.
         Això ajuda a prioritzar les comandes urgents i garanteix que es lliurin a temps.
         El temps de compromís ve determinat per l'especialitat de la comanda. Cada especialitat té un temps de compromís diferent.
+        La funció calcula el pes acumulat de les comandes i s'assegura que no superi la seva capacitat màxima.
     
     Heurística per determinar els restaurants:
         La funció selecciona el restaurant més proper a la ubicació actual i que ofereixi l'especialitat amb el temps de compromís més alt.
@@ -46,10 +131,14 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     distanciaRecorreguda: float = 0
     ruta: List[Coordenada] = [ubicacioActual]
 
-    comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis) #TODO: Hill Climbing
+    comandesProgramades: List[Comanda] = []
+    comandesNoProgramades: List[Comanda] = []
 
-    while len(comandes) > 0 and capacitatActual+comandes[0].especialitat.pes <= capacitatMaxima: #TODO: BFS
-        comanda: Comanda = comandes.pop(0)
+    # // comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis)
+    comandesProgramades, comandesNoProgramades = hillClimbing(comandes, capacitatMaxima)
+
+    while len(comandesProgramades) > 0: #TODO: BFS
+        comanda: Comanda = comandesProgramades.pop(0)
         restaurant: Optional[Restaurant] = None
         distanciaMinima: float = float("inf")
 
@@ -77,7 +166,7 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     
     print(f"\t\tLa motxilla s'ha omplert amb {capacitatActual} g de {capacitatMaxima} g i s'han visitat {len(motxilla)} restaurants.")
 
-    return motxilla, distanciaRecorreguda, ubicacioActual, comandes, restaurants, ruta
+    return motxilla, distanciaRecorreguda, ubicacioActual, comandesNoProgramades, restaurants, ruta
 
 def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float, Coordenada, List[Coordenada]]:
     """
@@ -104,7 +193,9 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
     distanciaRecorreguda: float = 0
     ruta: List[Coordenada] = [ubicacioActual]
 
-    motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis) #TODO: Hill Climbing
+    #TODO: Hill Climbing
+    #? Realment cal ordenar les comandes per compromis? Ja estan ordenades de quan les hem recollit.
+    #? motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis)
 
     while len(motxilla) > 0: #TODO: BFS
         comanda: Comanda = motxilla[0]
