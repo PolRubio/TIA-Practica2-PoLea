@@ -1,5 +1,5 @@
-from typing import List, Optional, Tuple
-import argparse, os
+from typing import List, Optional, Tuple, Union
+import argparse, os, heapq
 
 from domain.coordenada import Coordenada
 from domain.comanda import Comanda
@@ -91,6 +91,36 @@ def hillClimbing(comandes: List[Comanda], capacitatMaxima: int, iteracionsMaxime
         solucioActual.remove(comanda)
     return solucioFinal, solucioActual
 
+def best_first_search(inici: Coordenada, llista: Union[List[Restaurant], List[Comanda]], comanda: Comanda) -> Tuple[Optional[Union[Restaurant, Comanda]], float]:
+    """
+    Funció que implementa l'algorisme Best First Search per a la resolució del problema de la motxilla.
+
+    Args:
+        inici (Coordenada): Coordenada inicial de la ubicació actual.
+        restaurants (List[Restaurant]): Llista de restaurants disponibles.
+        comanda (Comanda): Comanda a lliurar.
+
+    Returns:
+        Tuple[Optional[Restaurant], float]:
+            - Restaurant més proper que ofereixi l'especialitat de la comanda.
+            - Distància entre la ubicació actual i el restaurant més proper.
+    """
+
+    cua: List[Tuple[float, Union[Optional[Restaurant], Optional[Comanda]]]] = []
+    escollit: Union[Optional[Restaurant], Optional[Comanda]] = None
+    distancia: float = 0
+    
+    for r in llista:
+        if r.especialitat == comanda.especialitat:
+            distance = inici.distancia(r.coordenades)
+            heapq.heappush(cua, (distance, r))
+
+    while cua:
+        distancia, restaurant = heapq.heappop(cua)
+        return restaurant, distancia
+    
+    return None, 0.0
+
 def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: int, restaurants: List[Restaurant], repetirRestaurants: bool)-> Tuple[List[Comanda], float, Coordenada, List[Comanda], List[Restaurant], List[Coordenada]]:
     """
     Funció que simula l'ompliment d'una motxilla amb comandes recollides en restaurants.
@@ -102,10 +132,9 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
         El temps de compromís ve determinat per l'especialitat de la comanda. Cada especialitat té un temps de compromís diferent.
         La funció calcula el pes acumulat de les comandes i s'assegura que no superi la seva capacitat màxima.
     
-    Heurística per determinar els restaurants:
-        La funció selecciona el restaurant més proper a la ubicació actual i que ofereixi l'especialitat amb el temps de compromís més alt.
+    Heurística per determinar els restaurants [Best First Search]:
+        La funció selecciona el restaurant més proper a la ubicació actual i que ofereixi l'especialitat de la comanda a lliurar.
         Itera pels restaurants disponibles i calcula la distància entre la ubicació actual i cada restaurant.
-        Se selecciona el restaurant amb la distància més curta i que coincideixi amb l'especialitat.
         Si l'opció de repetir restaurants està desactivada, el restaurant seleccionat s'elimina de la llista de restaurants disponibles.
     
     Args:
@@ -140,16 +169,26 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     while len(comandesProgramades) > 0: #TODO: BFS
         comanda: Comanda = comandesProgramades.pop(0)
         restaurant: Optional[Restaurant] = None
+        escollit: Optional[Union[Restaurant, Comanda]] = None
         distanciaMinima: float = float("inf")
 
-        for r in restaurants:
-            if r.especialitat == comanda.especialitat:
-                distancia: float = ubicacioActual.distancia(r.coordenades)
-                if distancia < distanciaMinima:
-                    distanciaMinima = distancia
-                    restaurant = r
+        # // for r in restaurants:
+        # //     if r.especialitat == comanda.especialitat:
+        # //         distancia: float = ubicacioActual.distancia(r.coordenades)
+        # //         if distancia == distanciaMinima:
+        # //             print(f"\t\tHi ha més d'un restaurant que ofereix la especialitat {comanda.especialitat.especialitat} a la mateixa distància.")
+        # //             break
+        # //         if distancia < distanciaMinima:
+        # //             distanciaMinima = distancia
+        # //             restaurant = r
+        
+        # // if restaurant is not None:
 
-        if restaurant is not None:
+        escollit, distanciaMinima = best_first_search(ubicacioActual, restaurants, comanda)
+
+        if escollit is not None and isinstance(escollit, Restaurant):
+            restaurant = escollit
+
             print(f"\t\tAnem al restaurant {restaurant.nom} ({restaurant.especialitat.especialitat}) que està a {round(distanciaMinima, 2)} metres a les coordenades ({restaurant.coordenades.latitud}, {restaurant.coordenades.longitud}) a per la comanda {comanda.id} ({comanda.especialitat.especialitat}).")
 
             motxilla.append(comanda)
@@ -172,10 +211,14 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
     """
     Funció que simula l'entrega de comandes a partir d'una motxilla de restaurants.
 
-    Heurística per determinar les comandes:
-        La funció ordena la llista de comandes en funció del temps de compromís de cada comanda.
-        De las comandes de la mateixa especialitat, ergo amb el mateix temps de compromís, s'entrega la comanda més propera.
+    ? Realment cal ordenar les comandes per compromis? Ja estan ordenades de quan les hem recollit.
+    ? Heurística per determinar les comandes [Hill Climbing]: 
+    ?     La funció ordena la llista de comandes en funció del temps de compromís de cada comanda.
+    ?     De las comandes de la mateixa especialitat, ergo amb el mateix temps de compromís, s'entrega la comanda més propera.
 
+    Heurística per determinar les comandes [Best First Search]:
+        La funció selecciona la comanda més propera a la ubicació actual entre les comandes de la mateixa especialitat.
+        Itera per les comandes disponibles i calcula la distància entre la ubicació actual i cada comanda.
     
     Args:
         inici (Coordenada): Coordenada inicial de la ubicació actual.
@@ -193,28 +236,41 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
     distanciaRecorreguda: float = 0
     ruta: List[Coordenada] = [ubicacioActual]
 
-    #TODO: Hill Climbing
-    #? Realment cal ordenar les comandes per compromis? Ja estan ordenades de quan les hem recollit.
-    #? motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis)
+    # TODO: Hill Climbing
+    # ? Realment cal ordenar les comandes per compromis? Ja estan ordenades de quan les hem recollit.
+    # ? motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis)
 
-    while len(motxilla) > 0: #TODO: BFS
-        comanda: Comanda = motxilla[0]
+    while len(motxilla) > 0:
+        comanda: Optional[Comanda] = motxilla[0]
+        escollit: Optional[Union[Restaurant, Comanda]] = None
         distanciaMinima: float = float("inf")
 
-        for r in motxilla:
-            if r.especialitat == comanda.especialitat:
-                distancia: float = ubicacioActual.distancia(r.coordenades)
-                if distancia < distanciaMinima:
-                    distanciaMinima = distancia
-                    comanda = r
+        # // for r in motxilla:
+        # //     if r.especialitat == comanda.especialitat:
+        # //         distancia: float = ubicacioActual.distancia(r.coordenades)
+        # //         if distancia < distanciaMinima:
+        # //             distanciaMinima = distancia
+        # //             comanda = r
 
-        print(f"\t\tAnem a lliurar la comanda {comanda.id} ({comanda.especialitat.especialitat}) que està a {round(distanciaMinima, 2)} metres a les coordenades ({comanda.coordenades.latitud}, {comanda.coordenades.longitud}).")
+        # // if comanda is not None:
 
-        ubicacioActual = comanda.coordenades
-        distanciaRecorreguda += distanciaMinima
-        ruta.append(ubicacioActual)
+        escollit, distanciaMinima = best_first_search(ubicacioActual, motxilla, comanda)
+            
+        if escollit is not None and isinstance(escollit, Comanda):
+            comanda = escollit
+            
+            print(f"\t\tAnem a lliurar la comanda {comanda.id} ({comanda.especialitat.especialitat}) que està a {round(distanciaMinima, 2)} metres a les coordenades ({comanda.coordenades.latitud}, {comanda.coordenades.longitud}).")
+            
+            ubicacioActual = comanda.coordenades
+            distanciaRecorreguda += distanciaMinima
+            ruta.append(ubicacioActual)
 
-        motxilla.remove(comanda)
+            motxilla.remove(comanda)
+
+        else:
+            print(f"\t\tNo s'ha pogut trobar cap comanda a lliurar.")
+            raise Exception(f"No s'ha pogut trobar cap comanda a lliurar.")
+            
 
     print(f"\t\tTotes les comandes han estat lliurades correctament i s'han recorregut {round(distanciaRecorreguda, 2)} metres.")
 
@@ -256,7 +312,6 @@ def main(capacitatMaxima: int, repetirRestaurants: bool, outputFolder: str, outp
     print(f"Mapa guardat correctament. Ho pots veure obrint el següent enllaç: file://{outputPath}")
 
 if __name__ == "__main__":
-    # argparse
     parser = argparse.ArgumentParser(description="Simulador de l'ompliment d'una motxilla amb comandes recollides en restaurants i l'entrega de les comandes.")
     
     parser.add_argument("--no-repetirRestaurants", dest="repetirRestaurants", action="store_false", default=True, help="No permet als restaurants preparar més d'una comanda.")

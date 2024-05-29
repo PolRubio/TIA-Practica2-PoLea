@@ -7,3 +7,6 @@ class Restaurant:
         self.carrer: str = carrer
         self.especialitat: Especialitat = especialitat
         self.coordenades: Coordenada = coordenades
+    
+    def __lt__(self, altre: "Restaurant") -> bool:
+        return self.nom < altre.nom
