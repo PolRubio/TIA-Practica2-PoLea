@@ -1,5 +1,5 @@
 from typing import List, Optional, Tuple, Union
-import argparse, os, heapq
+import argparse, os, heapq, time
 
 from domain.coordenada import Coordenada
 from domain.comanda import Comanda
@@ -277,6 +277,7 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
     return distanciaRecorreguda, ubicacioActual, ruta
 
 def main(capacitatMaxima: int, repetirRestaurants: bool, outputFolder: str, outputFileName: str) -> None:
+    tempsInici: float = time.time()
     comandesRestants: List[Comanda] = comandes.copy()
     ubicacioActual: Coordenada = tecnocampus
     restaurantsNoVisitats: List[Restaurant] = restaurants.copy()
@@ -310,6 +311,9 @@ def main(capacitatMaxima: int, repetirRestaurants: bool, outputFolder: str, outp
     print(f"Totes les comandes han estat recollides i entregades correctament. En total s'han recorregut {round(distanciaTotal/10**3, 2)} kilometres.")
     outputPath = mapa.save(outputFileName)
     print(f"Mapa guardat correctament. Ho pots veure obrint el següent enllaç: file://{outputPath}")
+    print()
+    print(f"Temps total d'execució: {round(time.time() - tempsInici, 4)} segons.")
+    print()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulador de l'ompliment d'una motxilla amb comandes recollides en restaurants i l'entrega de les comandes.")
