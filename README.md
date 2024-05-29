@@ -4,6 +4,17 @@
 
 MTRFoodDelivery és un projecte de simulació basat en Python dissenyat per optimitzar el procés de recollida i lliurament de comandes de menjar des de diversos restaurants a Mataró. L'objectiu és assegurar que el menjar es lliura de manera eficient, complint amb els compromisos de temps específics per a cada tipus de cuina.
 
+## Algoritmes
+
+### Hill Climbing
+
+Aquest algoritme s'utilitza en la funció `omplirMotxilla` per determinar l'ordre de recollida i lliurament de les comandes. L'algoritme selecciona iterativament la comanda amb el compromís de temps més baix fins que s'assoleix la capacitat màxima de la motxilla.
+
+### Best-First Search
+
+Aquest algoritme s'utilitza en les funcions `omplirMotxilla` i `entregarComandes` per determinar la comanda més propera a la ubicació actual entre les comandes de la mateixa especialitat.
+L'algoritme itera per les comandes disponibles i calcula la distància entre la ubicació actual i cada comanda.
+    
 ## Estructura del Projecte
 
 El projecte consta dels següents components principals:
