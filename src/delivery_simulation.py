@@ -166,7 +166,7 @@ def omplirMotxilla(inici: Coordenada, comandes: List[Comanda], capacitatMaxima: 
     # // comandes = sorted(comandes, key=lambda comanda: comanda.especialitat.compromis)
     comandesProgramades, comandesNoProgramades = hillClimbing(comandes, capacitatMaxima)
 
-    while len(comandesProgramades) > 0: #TODO: BFS
+    while len(comandesProgramades) > 0:
         comanda: Comanda = comandesProgramades.pop(0)
         restaurant: Optional[Restaurant] = None
         escollit: Optional[Union[Restaurant, Comanda]] = None
@@ -236,8 +236,7 @@ def entregarComandes(inici: Coordenada, motxilla: List[Comanda]) -> Tuple[float,
     distanciaRecorreguda: float = 0
     ruta: List[Coordenada] = [ubicacioActual]
 
-    # TODO: Hill Climbing
-    # ? Realment cal ordenar les comandes per compromis? Ja estan ordenades de quan les hem recollit.
+    # ? Realment no cal ordenar les comandes per compromis, ja estan ordenades de quan les hem recollit i estan emagatzemades a una llista ordenada.
     # ? motxilla = sorted(motxilla, key=lambda comanda: comanda.especialitat.compromis)
 
     while len(motxilla) > 0:
